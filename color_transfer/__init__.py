@@ -125,7 +125,7 @@ def auto_color_transfer(source, target):
             hsv_means_cand = np.array(image_stats(hsv_candidate)[::2])
 
             # calc mean absolute error across L*a*b* means
-            mean_abs_err = np.mean(np.abs(hsv_means_src[0] - hsv_means_cand[0]))
+            mean_abs_err = np.mean(np.abs(hsv_means_src - hsv_means_cand))
 
             # propose new truest result if found new smallest mae
             if mean_abs_err < best_abs_err:
