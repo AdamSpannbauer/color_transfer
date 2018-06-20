@@ -107,7 +107,7 @@ def auto_color_transfer(source, target):
         comparison:  NumPy array
         image showing the results of all combinations of color_transfer options
     """
-    # get mean L*a*b* stats from source image for comparison
+    # get mean HSV stats from source image for comparison
     hsv_source = cv2.cvtColor(source, cv2.COLOR_BGR2HSV)
     hsv_means_src = np.array(image_stats(hsv_source)[::2])
 
@@ -120,11 +120,11 @@ def auto_color_transfer(source, target):
         for preserve_paper in bools:
             # create candidate image from options of this iteration
             candidate = color_transfer(source, target, clip, preserve_paper)
-            # get mean L*a*b* stats from candidate image for comparison
+            # get mean HSV stats from candidate image for comparison
             hsv_candidate = cv2.cvtColor(candidate, cv2.COLOR_BGR2HSV)
             hsv_means_cand = np.array(image_stats(hsv_candidate)[::2])
 
-            # calc mean absolute error across L*a*b* means
+            # calc mean absolute error across HSV means
             mean_abs_err = np.mean(np.abs(hsv_means_src - hsv_means_cand))
 
             # propose new truest result if found new smallest mae
@@ -133,8 +133,10 @@ def auto_color_transfer(source, target):
 
             candidates.append(candidate)
 
+    # build 2 by 2 image matrix of all candidates for comparison
     comparison = np.hstack((np.vstack(candidates[:2]),
                             np.vstack(candidates[2:])))
+    # add border annotations showing values of params for each output
     comparison = _bool_matrix_border(comparison)
 
     return best_result, comparison
