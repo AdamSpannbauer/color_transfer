@@ -109,26 +109,28 @@ def auto_color_transfer(source, target):
     """
     # get mean HSV stats from source image for comparison
     hsv_source = cv2.cvtColor(source, cv2.COLOR_BGR2HSV)
-    hsv_means_src = np.array(image_stats(hsv_source)[::2])
+    hsv_hist_src = cv2.calcHist([hsv_source], [0, 1, 2], None,
+                                [8, 8, 8], [0, 256, 0, 256, 0, 256])
 
     # iterate through all 4 options for toggling color transfer
     bools = [True, False]
     candidates = []
     best_result = None
-    best_abs_err = float('inf')
+    best_dist = float('inf')
     for clip in bools:
         for preserve_paper in bools:
             # create candidate image from options of this iteration
             candidate = color_transfer(source, target, clip, preserve_paper)
             # get mean HSV stats from candidate image for comparison
             hsv_candidate = cv2.cvtColor(candidate, cv2.COLOR_BGR2HSV)
-            hsv_means_cand = np.array(image_stats(hsv_candidate)[::2])
+            hsv_hist_cand = cv2.calcHist([hsv_candidate], [0, 1, 2], None,
+                                         [8, 8, 8], [0, 256, 0, 256, 0, 256])
 
-            # calc mean absolute error across HSV means
-            mean_abs_err = np.mean(np.abs(hsv_means_src - hsv_means_cand))
+            # calc chi square dist
+            chi2_dist = chi2_distance(hsv_hist_src, hsv_hist_cand)
 
             # propose new truest result if found new smallest mae
-            if mean_abs_err < best_abs_err:
+            if chi2_dist < best_dist:
                 best_result = candidate[:]
 
             candidates.append(candidate)
@@ -140,6 +142,10 @@ def auto_color_transfer(source, target):
     comparison = _bool_matrix_border(comparison)
 
     return best_result, comparison
+
+
+def chi2_distance(hist_a, hist_b, eps=1e-10):
+    return 0.5 * np.sum(((hist_a - hist_b) ** 2) / (hist_a + hist_b + eps))
 
 
 def _bool_matrix_border(comparison_image):
